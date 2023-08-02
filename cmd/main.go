@@ -1,6 +1,9 @@
 package main
 
+import "github.com/gofiber/fiber/v2"
+
 func main() {
-	appConfig := NewAppConfig()
-	appConfig.Routes()
+	app := fiber.New()
+
+	app.Listen(":5000")
 }
