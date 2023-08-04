@@ -1,6 +1,8 @@
 package api
 
 import (
+	"context"
+
 	"github.com/FadyGamilM/hotelreservationapi/db"
 	"github.com/gofiber/fiber/v2"
 )
@@ -25,9 +27,12 @@ func (uh *UserHandler) HandleGetUsers(c *fiber.Ctx) error {
 }
 
 func (uh *UserHandler) HandleGetUserByID(c *fiber.Ctx) error {
-	user_id := c.Params("id")
+	var (
+		user_id = c.Params("id")
+		ctx     = context.Background()
+	)
 
-	user, err := uh.repo.GetUserById(user_id)
+	user, err := uh.repo.GetUserById(ctx, user_id)
 	if err != nil {
 		return err
 	}
