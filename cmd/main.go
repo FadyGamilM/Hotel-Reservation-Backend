@@ -41,34 +41,8 @@ func main() {
 	users_router_v1 := app.Group("/api/v1/users")
 	users_router_v1.Get("/", userHandler.HandleGetUsers)
 	users_router_v1.Get("/:id", userHandler.HandleGetUserByID)
+	users_router_v1.Post("/", userHandler.HandleCreateUser)
 
 	// listen to the port and start the server
 	app.Listen(*listenAddr)
 }
-
-// => Insert user
-// // define a context
-// ctx := context.Background()
-// // get the collection
-// user_coll := client.Database(db_name).Collection(user_collection)
-// // create user entity to be persisted
-// user := types.User{
-// 	FirstName: "fady",
-// 	LastName:  "gamil",
-// }
-// // persist data
-// res, err := user_coll.InsertOne(ctx, user)
-// if err != nil {
-// 	log.Fatal(err)
-// }
-// fmt.Println(res)
-// fmt.Println(res.InsertedID)
-
-// // => Fetch First user matches the empty filter (will be the 1st record in db)
-// var foundUser types.User
-// err = user_coll.FindOne(ctx, bson.M{}).Decode(&foundUser)
-// if err != nil {
-// 	log.Fatal(err)
-// }
-// // print the decoded user
-// fmt.Println(foundUser)

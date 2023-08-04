@@ -11,7 +11,7 @@ import (
 
 type UserRepository interface {
 	GetUsers(context.Context) ([]*types.User, error)
-	CreateUser(context.Context, *types.User) error
+	CreateUser(context.Context, *types.User) (*types.User, error)
 	GetUserById(context.Context, string) (*types.User, error)
 }
 
@@ -33,12 +33,32 @@ func NewMongoUserRepo(client *mongo.Client) *MongoUserRepo {
 }
 
 func (m *MongoUserRepo) GetUsers(ctx context.Context) ([]*types.User, error) {
-	return nil, nil
+	users := []*types.User{}
 
+	// define a cursor which is a pointer to the query result
+	cur, err := m.collection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+
+	// deserialize the result into our entity model and handle if there are any errors
+	if err := cur.All(ctx, &users); err != nil {
+		return []*types.User{}, nil
+	}
+
+	return users, nil
 }
 
-func (m *MongoUserRepo) CreateUser(context.Context, *types.User) error {
-	return nil
+func (m *MongoUserRepo) CreateUser(ctx context.Context, user *types.User) (*types.User, error) {
+	res, err := m.collection.InsertOne(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	// now set the id of the user document
+	user.ID = res.InsertedID.(primitive.ObjectID).Hex()
+
+	return user, nil
 }
 
 func (m *MongoUserRepo) GetUserById(ctx context.Context, id string) (*types.User, error) {
