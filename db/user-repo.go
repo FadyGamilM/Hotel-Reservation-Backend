@@ -9,9 +9,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// Notice that the repos must receive and return a user domain entity not the mongo entity type because handlers are sending these types and handlers should know nothing about the impl details ..
 type UserRepository interface {
 	GetUsers(context.Context) ([]*types.User, error)
-	CreateUser(context.Context, *types.User) (*types.User, error)
+	CreateUser(context.Context, *types.UserMongoDb) (*types.User, error)
 	GetUserById(context.Context, string) (*types.User, error)
 }
 
@@ -49,7 +50,7 @@ func (m *MongoUserRepo) GetUsers(ctx context.Context) ([]*types.User, error) {
 	return users, nil
 }
 
-func (m *MongoUserRepo) CreateUser(ctx context.Context, user *types.User) (*types.User, error) {
+func (m *MongoUserRepo) CreateUser(ctx context.Context, user *types.UserMongoDb) (*types.User, error) {
 	res, err := m.collection.InsertOne(ctx, user)
 	if err != nil {
 		return nil, err
@@ -58,7 +59,14 @@ func (m *MongoUserRepo) CreateUser(ctx context.Context, user *types.User) (*type
 	// now set the id of the user document
 	user.ID = res.InsertedID.(primitive.ObjectID).Hex()
 
-	return user, nil
+	// return a user domain entity so the handlers don't have to convert from mongodb entity to a domain entity to make handlers more clean
+	return &types.User{
+		ID:                user.ID,
+		FirstName:         user.FirstName,
+		LastName:          user.LastName,
+		Email:             user.Email,
+		EncryptedPassword: user.EncryptedPassword,
+	}, nil
 }
 
 func (m *MongoUserRepo) GetUserById(ctx context.Context, id string) (*types.User, error) {

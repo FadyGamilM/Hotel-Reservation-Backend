@@ -52,32 +52,38 @@ func (uh *UserHandler) HandleGetUserByID(c *fiber.Ctx) error {
 	➜ returns json_response / or error if there is one
 */
 func (uh *UserHandler) HandleCreateUser(c *fiber.Ctx) error {
-	// 1. Get data from request body and parse it to the request dto
+	// 1. parse request body data into requestDto type
 	var reqDto types.CreateUserRequest
 	err := c.BodyParser(&reqDto)
 	if err != nil {
 		return err
 	}
 
-	// i should have a conversion between the requestDto => domain model entity
-	// then the domain model entity will validate the data in the middle and return any errors if there are
-	// then another conversion between the domain entity => db entity and pass it here ( i will do this in hex arch version of this project )
+	// 2. convert requestDto type into domainEntity type to handle core logic
 	userEntity, err := types.NewUserEntity(reqDto)
 	if err != nil {
 		return err
 	}
-	createdUser, err := uh.repo.CreateUser(c.Context(), userEntity)
+	// core logic validation
+	validationErr := userEntity.Validate()
+	if validationErr != nil {
+		return validationErr
+	}
+
+	// 3. convert domainEntity type into databaseDto type
+	dbEntity, _ := types.NewMongoDbUserEntity(*userEntity)
+	createdUser, err := uh.repo.CreateUser(c.Context(), (dbEntity))
 	if err != nil {
 		return err
 	}
 
-	// Now convert the returned data into the response dto form
+	// Now convert the returned domain entity into the response dto form
 	userResponseDto := types.CreateUserResponse{
 		ID:        createdUser.ID,
 		FirstName: createdUser.FirstName,
 		LastName:  createdUser.LastName,
 		Email:     createdUser.Email,
 	}
-
+	// 4. returns json_response / or error if there is one
 	return c.JSON(userResponseDto)
 }
