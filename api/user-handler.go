@@ -1,9 +1,12 @@
 package api
 
 import (
+	"errors"
+
 	"github.com/FadyGamilM/hotelreservationapi/db"
 	"github.com/FadyGamilM/hotelreservationapi/types"
 	"github.com/gofiber/fiber/v2"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type UserHandler struct {
@@ -45,6 +48,9 @@ func (uh *UserHandler) HandleGetUserByID(c *fiber.Ctx) error {
 
 	user, err := uh.repo.GetUserById(c.Context(), user_id)
 	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return errors.New("not found")
+		}
 		return err
 	}
 
@@ -105,4 +111,24 @@ func (uh *UserHandler) HandleCreateUser(c *fiber.Ctx) error {
 	}
 	// 4. returns json_response / or error if there is one
 	return c.JSON(userResponseDto)
+}
+
+/*
+@ Responsibilites:
+
+	➜ Get the user id from the request params
+	➜ Call the repo delete  method to handle the request using the db
+
+@ Returns:
+
+	➜ Empty response or error if there is any
+*/
+func (uh *UserHandler) HandleDeleteUser(c *fiber.Ctx) error {
+	userID := c.Params("id")
+	err := uh.repo.DeleteUserById(c.Context(), userID)
+	if err != nil {
+		return errors.New("internal server error while deleting user from database")
+	}
+
+	return nil
 }

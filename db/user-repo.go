@@ -14,6 +14,7 @@ type UserRepository interface {
 	GetUsers(context.Context) ([]*types.User, error)
 	CreateUser(context.Context, *types.UserMongoDb) (*types.User, error)
 	GetUserById(context.Context, string) (*types.User, error)
+	DeleteUserById(context.Context, string) error
 }
 
 type MongoUserRepo struct {
@@ -84,7 +85,7 @@ func (m *MongoUserRepo) CreateUser(ctx context.Context, user *types.UserMongoDb)
 func (m *MongoUserRepo) GetUserById(ctx context.Context, id string) (*types.User, error) {
 	// filter to get the user by its id
 	// 1. first validate the id to be a right mongodb id
-	obj_id, err := primitive.ObjectIDFromHex(id)
+	obj_id, err := convertFromStringToObjectID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -107,4 +108,27 @@ func (m *MongoUserRepo) GetUserById(ctx context.Context, id string) (*types.User
 		EncryptedPassword: dbEntity.EncryptedPassword,
 	}
 	return &domainEntity, nil
+}
+
+func (m *MongoUserRepo) DeleteUserById(ctx context.Context, id string) error {
+	// convert the id to a primitive objectID to filter based on it using mongo store
+	obj_id, err := convertFromStringToObjectID(id)
+	if err != nil {
+		return err
+	}
+
+	_, err = m.collection.DeleteOne(ctx, bson.M{"_id": obj_id})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func convertFromStringToObjectID(id string) (*primitive.ObjectID, error) {
+	obj_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+	return &obj_id, nil
 }
