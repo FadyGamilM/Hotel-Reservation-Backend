@@ -1,6 +1,10 @@
 package types
 
 import (
+	"net"
+	"regexp"
+	"strings"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -12,6 +16,7 @@ var (
 	InvalidFirstNameErrMsg = "invalid first_name"
 	InvalidLastNameErrMsg  = "invalid last_name"
 	InvalidPasswordErrMsg  = "invalid password"
+	InvalidEmailErrMsg     = "invalid email"
 )
 
 type User struct {
@@ -43,7 +48,30 @@ func (user *User) Validate() error {
 		}
 	}
 
+	if !isEmailValid(user.Email) {
+		return InvalidEmailErr{
+			msg: InvalidEmailErrMsg,
+		}
+	}
+
 	return nil
+}
+
+var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+
+func isEmailValid(e string) bool {
+	if len(e) < 3 && len(e) > 254 {
+		return false
+	}
+	if !emailRegex.MatchString(e) {
+		return false
+	}
+	parts := strings.Split(e, "@")
+	mx, err := net.LookupMX(parts[1])
+	if err != nil || len(mx) == 0 {
+		return false
+	}
+	return true
 }
 
 type InvalidFirstNameErr struct {
@@ -67,6 +95,14 @@ type InvalidPasswordErr struct {
 }
 
 func (e InvalidPasswordErr) Error() string {
+	return e.msg
+}
+
+type InvalidEmailErr struct {
+	msg string
+}
+
+func (e InvalidEmailErr) Error() string {
 	return e.msg
 }
 
