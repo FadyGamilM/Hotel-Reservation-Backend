@@ -18,8 +18,8 @@ const db_name = "hotel-reservation"
 const user_collection = "users"
 
 func main() {
-	// define fiber app instance
-	app := fiber.New()
+	// define fiber app instance with the custom error handler config
+	app := fiber.New(api.Config)
 
 	// connect to db and get client
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db_uri))
