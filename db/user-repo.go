@@ -34,7 +34,8 @@ func NewMongoUserRepo(client *mongo.Client) *MongoUserRepo {
 }
 
 func (m *MongoUserRepo) GetUsers(ctx context.Context) ([]*types.User, error) {
-	users := []*types.User{}
+	domainUsers := []*types.User{}
+	dbUsers := []*types.UserMongoDb{}
 
 	// define a cursor which is a pointer to the query result
 	cur, err := m.collection.Find(ctx, bson.M{})
@@ -43,11 +44,22 @@ func (m *MongoUserRepo) GetUsers(ctx context.Context) ([]*types.User, error) {
 	}
 
 	// deserialize the result into our entity model and handle if there are any errors
-	if err := cur.All(ctx, &users); err != nil {
+	if err := cur.All(ctx, &dbUsers); err != nil {
 		return []*types.User{}, nil
 	}
 
-	return users, nil
+	// convert the db-related-users-type to domain entity type
+	for _, dbUser := range dbUsers {
+		domainUsers = append(domainUsers, &types.User{
+			ID:                dbUser.ID,
+			FirstName:         dbUser.FirstName,
+			LastName:          dbUser.LastName,
+			Email:             dbUser.Email,
+			EncryptedPassword: dbUser.EncryptedPassword,
+		})
+	}
+
+	return domainUsers, nil
 }
 
 func (m *MongoUserRepo) CreateUser(ctx context.Context, user *types.UserMongoDb) (*types.User, error) {
@@ -70,18 +82,29 @@ func (m *MongoUserRepo) CreateUser(ctx context.Context, user *types.UserMongoDb)
 }
 
 func (m *MongoUserRepo) GetUserById(ctx context.Context, id string) (*types.User, error) {
-	// define user entity to deserialize the data from mongodb to your entity model
-	var user types.User
 	// filter to get the user by its id
 	// 1. first validate the id to be a right mongodb id
 	obj_id, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
-	err = m.collection.FindOne(ctx, bson.M{"_id": obj_id}).Decode(&user)
+
+	// define user entity to deserialize the data from mongodb to your entity model
+	var dbEntity types.UserMongoDb
+
+	err = m.collection.FindOne(ctx, bson.M{"_id": obj_id}).Decode(&dbEntity)
 	// handle errors
 	if err != nil {
 		return nil, err
 	}
-	return &user, nil
+
+	// convert the dbEntity to domain entity and return it to tha handler
+	domainEntity := types.User{
+		ID:                dbEntity.ID,
+		FirstName:         dbEntity.FirstName,
+		LastName:          dbEntity.LastName,
+		Email:             dbEntity.Email,
+		EncryptedPassword: dbEntity.EncryptedPassword,
+	}
+	return &domainEntity, nil
 }

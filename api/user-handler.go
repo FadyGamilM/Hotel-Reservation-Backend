@@ -24,7 +24,18 @@ func (uh *UserHandler) HandleGetUsers(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.JSON(users)
+	responseDtos := []types.CreateUserResponse{}
+
+	for _, domainUser := range users {
+		responseDtos = append(responseDtos, types.CreateUserResponse{
+			ID:        domainUser.ID,
+			FirstName: domainUser.FirstName,
+			LastName:  domainUser.LastName,
+			Email:     domainUser.Email,
+		})
+	}
+
+	return c.JSON(responseDtos)
 }
 
 func (uh *UserHandler) HandleGetUserByID(c *fiber.Ctx) error {
@@ -36,7 +47,15 @@ func (uh *UserHandler) HandleGetUserByID(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(user)
+
+	// convert to responseDto
+	userResponseDto := types.CreateUserResponse{
+		ID:        user.ID,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+	}
+	return c.JSON(userResponseDto)
 }
 
 /*
