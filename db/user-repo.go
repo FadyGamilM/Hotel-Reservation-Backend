@@ -2,6 +2,8 @@ package db
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/FadyGamilM/hotelreservationapi/types"
 	"go.mongodb.org/mongo-driver/bson"
@@ -15,6 +17,7 @@ type UserRepository interface {
 	CreateUser(context.Context, *types.UserMongoDb) (*types.User, error)
 	GetUserById(context.Context, string) (*types.User, error)
 	DeleteUserById(context.Context, string) error
+	UpdateUserById(context.Context, string, types.UpdateUserRequest) error
 }
 
 type MongoUserRepo struct {
@@ -131,4 +134,80 @@ func convertFromStringToObjectID(id string) (*primitive.ObjectID, error) {
 		return nil, err
 	}
 	return &obj_id, nil
+}
+
+func (m *MongoUserRepo) UpdateUserById(c context.Context, id string, updatedValues types.UpdateUserRequest) error {
+	// convert user id from string to mongodb id type
+	obj_id, err := convertFromStringToObjectID(id)
+	if err != nil {
+		return err
+	}
+
+	// define a filter to retrieve and update based-on
+	filter := bson.M{"_id": obj_id}
+
+	// fetch the user
+	var dbEntity *types.UserMongoDb
+	err = m.collection.FindOne(c, filter).Decode(&dbEntity)
+	if err != nil {
+		return err
+	}
+	fmt.Println("USER BEFORE UPDATE ==> ", dbEntity)
+
+	// now convert the dbEntity to domain entity so we can use domain entity methods here
+	// update its fields (the provided ones only)
+	domainEntity := new(types.User)
+	domainEntity.ID = dbEntity.ID
+	domainEntity.FirstName = dbEntity.FirstName
+	domainEntity.LastName = dbEntity.LastName
+	domainEntity.Email = dbEntity.Email
+	domainEntity.EncryptedPassword = dbEntity.EncryptedPassword
+
+	fmt.Println("start")
+	AvailableFieldsToBeUpdated := make(map[string]string)
+	if len(updatedValues.FirstName) > 0 {
+
+		AvailableFieldsToBeUpdated["FirstName"] = updatedValues.FirstName
+	}
+
+	if len(updatedValues.LastName) > 0 {
+		fmt.Print("noooooooooooo")
+		AvailableFieldsToBeUpdated["LastName"] = updatedValues.LastName
+	}
+	fmt.Print("noooooooooooyes")
+
+	fmt.Println(AvailableFieldsToBeUpdated["LastName"])
+	for field_key, field_val := range AvailableFieldsToBeUpdated {
+		fmt.Println("start")
+		fmt.Println(field_key)
+		fmt.Println(field_val)
+
+		err := domainEntity.Update(field_key, field_val)
+		fmt.Println("done")
+		if err != nil {
+			return err
+		}
+	}
+
+	fmt.Println("USER After UPDATE ==> ", *domainEntity)
+
+	// persist the changes and convert back to db entity type
+	updateResult, err := m.collection.UpdateOne(c, filter, bson.M{"$set": &types.UserMongoDb{
+		ID:                domainEntity.ID,
+		FirstName:         domainEntity.FirstName,
+		LastName:          domainEntity.LastName,
+		Email:             domainEntity.Email,
+		EncryptedPassword: domainEntity.EncryptedPassword,
+	}})
+	if err != nil {
+		return err
+	}
+
+	numOfUpdatedUsers := updateResult.ModifiedCount
+	if numOfUpdatedUsers == 0 || numOfUpdatedUsers > 1 {
+		return errors.New("error while updating the user")
+	}
+
+	// return
+	return nil
 }

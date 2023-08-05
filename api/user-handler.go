@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/FadyGamilM/hotelreservationapi/db"
 	"github.com/FadyGamilM/hotelreservationapi/types"
@@ -131,4 +132,39 @@ func (uh *UserHandler) HandleDeleteUser(c *fiber.Ctx) error {
 	}
 
 	return nil
+}
+
+/*
+@ Responsibilites:
+
+	➜ Get the user id from the request params
+	➜ Call the repo delete  method to handle the request using the db
+
+@ Returns:
+
+	➜ Empty response or error if there is any
+*/
+func (uh *UserHandler) HandleUpdateUser(c *fiber.Ctx) error {
+	userId := c.Params("id")
+	updateRequestDto := new(types.UpdateUserRequest)
+	err := c.BodyParser(&updateRequestDto)
+	if err != nil {
+		fmt.Println("ok")
+
+		return err
+	}
+	fmt.Println(updateRequestDto.FirstName)
+
+	// // check for allowed fields to be updated from the provided data to check if at least one of them is there
+	// fieldExists, ok := reflect.TypeOf(updateRequestDto).FieldByName("FirstName")
+	// if !ok {
+	// 	fieldExists, ok = reflect
+	// }
+
+	err = uh.repo.UpdateUserById(c.Context(), userId, *updateRequestDto)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON("updated")
 }

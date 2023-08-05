@@ -1,7 +1,9 @@
 package types
 
 import (
+	"fmt"
 	"net"
+	"reflect"
 	"regexp"
 	"strings"
 
@@ -9,14 +11,15 @@ import (
 )
 
 var (
-	COST                   = 12
-	minFirstNameLength     = 2
-	minLastNameLength      = 2
-	minPasswordLength      = 8
-	InvalidFirstNameErrMsg = "invalid first_name"
-	InvalidLastNameErrMsg  = "invalid last_name"
-	InvalidPasswordErrMsg  = "invalid password"
-	InvalidEmailErrMsg     = "invalid email"
+	COST                      = 12
+	minFirstNameLength        = 2
+	minLastNameLength         = 2
+	minPasswordLength         = 8
+	InvalidFirstNameErrMsg    = "invalid first_name"
+	InvalidLastNameErrMsg     = "invalid last_name"
+	InvalidPasswordErrMsg     = "invalid password"
+	InvalidEmailErrMsg        = "invalid email"
+	InvalidUpdateParameterMsg = "invalid update paramters"
 )
 
 type User struct {
@@ -54,6 +57,40 @@ func (user *User) Validate() error {
 		}
 	}
 
+	return nil
+}
+
+// domain entity specifies for our app which fields are allowed to be updated and which fields are not .. the powerful domain design is optained here !
+func (u *User) Update(field string, value interface{}) error {
+	fieldExists, ok := reflect.TypeOf(u).FieldByName(field)
+	if ok {
+		fmt.Println("field exists : ", fieldExists.Name)
+		switch fieldExists.Name {
+		case "FirstName":
+			{
+				correctType := reflect.TypeOf(value).Kind() == reflect.String
+				if !correctType {
+					return InvalidFirstNameErr{msg: InvalidFirstNameErrMsg}
+				}
+				fmt.Printf("it was %v ", u.FirstName)
+				u.FirstName = value.(string)
+				fmt.Printf("it became %v \n", u.FirstName)
+			}
+		case "LastName":
+			{
+				correctType := reflect.TypeOf(value).Kind() == reflect.String
+				if !correctType {
+					return InvalidLastNameErr{msg: InvalidLastNameErrMsg}
+				}
+				fmt.Printf("it was %v ", u.LastName)
+				u.LastName = value.(string)
+				fmt.Printf("it became %v \n", u.LastName)
+			}
+		}
+
+	} else {
+		return InvalidUpdateParameterErr{msg: InvalidUpdateParameterMsg}
+	}
 	return nil
 }
 
@@ -106,6 +143,14 @@ func (e InvalidEmailErr) Error() string {
 	return e.msg
 }
 
+type InvalidUpdateParameterErr struct {
+	msg string
+}
+
+func (e InvalidUpdateParameterErr) Error() string {
+	return e.msg
+}
+
 type UserMongoDb struct {
 	// define the bson version as an omitempty so when we create an instance and not provide the id, it will not be passed as an empty so it won't be persisted as an empty id, instead it will be created via the db
 	ID                string `bson:"_id,omitempty" json:"id,omitempty"`
@@ -129,6 +174,13 @@ type CreateUserResponse struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Email     string `json:"email"`
+}
+
+// to allow user to send one or more fields we set the fields as a map with string key and an interface as a value
+type UpdateUserRequest struct {
+	// btw the allowed fiedls to be updated are the firstName and lastName
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
 }
 
 // method to convert from web-req-data to domain-entity-data

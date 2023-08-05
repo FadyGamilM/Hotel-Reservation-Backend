@@ -43,6 +43,7 @@ func main() {
 	users_router_v1.Get("/:id", userHandler.HandleGetUserByID)
 	users_router_v1.Post("/", userHandler.HandleCreateUser)
 	users_router_v1.Delete("/:id", userHandler.HandleDeleteUser)
+	users_router_v1.Put("/:id", userHandler.HandleUpdateUser)
 
 	// listen to the port and start the server
 	app.Listen(*listenAddr)
