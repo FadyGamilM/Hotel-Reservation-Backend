@@ -31,6 +31,21 @@ type User struct {
 	EncryptedPassword string
 }
 
+type PostgresUser struct {
+	ID                int64  `json:"id"`
+	FirstName         string `json:"first_name"`
+	LastName          string `json:"last_name"`
+	Email             string `json:"email"`
+	EncryptedPassword string `json:"encrypted_password"`
+}
+
+func (pu *PostgresUser) IsSameDomainEntity(u *User) bool {
+	if pu.FirstName == u.FirstName && pu.LastName == u.LastName && pu.Email == u.Email && pu.EncryptedPassword == u.EncryptedPassword {
+		return true
+	}
+	return false
+}
+
 func (user *User) Validate() error {
 	if len(user.FirstName) < minFirstNameLength {
 		return InvalidFirstNameErr{
