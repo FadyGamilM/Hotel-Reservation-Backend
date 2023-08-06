@@ -2,7 +2,8 @@ package api
 
 import (
 	"errors"
-	"fmt"
+	"reflect"
+	"strconv"
 
 	"github.com/FadyGamilM/hotelreservationapi/db"
 	"github.com/FadyGamilM/hotelreservationapi/types"
@@ -11,10 +12,10 @@ import (
 )
 
 type UserHandler struct {
-	repo db.UserRepository
+	repo db.UserRepo
 }
 
-func NewUserHandler(r db.UserRepository) *UserHandler {
+func NewUserHandler(r db.UserRepo) *UserHandler {
 	return &UserHandler{
 		repo: r,
 	}
@@ -23,7 +24,7 @@ func NewUserHandler(r db.UserRepository) *UserHandler {
 // handlers
 func (uh *UserHandler) HandleGetUsers(c *fiber.Ctx) error {
 
-	users, err := uh.repo.GetUsers(c.Context())
+	users, err := uh.repo.GetUsers()
 	if err != nil {
 		return err
 	}
@@ -32,7 +33,7 @@ func (uh *UserHandler) HandleGetUsers(c *fiber.Ctx) error {
 
 	for _, domainUser := range users {
 		responseDtos = append(responseDtos, types.CreateUserResponse{
-			ID:        domainUser.ID,
+			ID:        strconv.Itoa(int(domainUser.ID)),
 			FirstName: domainUser.FirstName,
 			LastName:  domainUser.LastName,
 			Email:     domainUser.Email,
@@ -44,10 +45,12 @@ func (uh *UserHandler) HandleGetUsers(c *fiber.Ctx) error {
 
 func (uh *UserHandler) HandleGetUserByID(c *fiber.Ctx) error {
 	var (
-		user_id = c.Params("id")
+		id = c.Params("id")
 	)
 
-	user, err := uh.repo.GetUserById(c.Context(), user_id)
+	user_id, err := strconv.ParseInt(id, 10, 64)
+
+	user, err := uh.repo.GetUserById(user_id)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return errors.New("not found")
@@ -57,7 +60,7 @@ func (uh *UserHandler) HandleGetUserByID(c *fiber.Ctx) error {
 
 	// convert to responseDto
 	userResponseDto := types.CreateUserResponse{
-		ID:        user.ID,
+		ID:        strconv.Itoa(int(user.ID)),
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		Email:     user.Email,
@@ -86,7 +89,7 @@ func (uh *UserHandler) HandleCreateUser(c *fiber.Ctx) error {
 	}
 
 	// 2. convert requestDto type into domainEntity type to handle core logic
-	userEntity, err := types.NewUserEntity(reqDto)
+	userEntity, err := types.NewUserEntityFromUserRequestDto(reqDto)
 	if err != nil {
 		return err
 	}
@@ -97,15 +100,14 @@ func (uh *UserHandler) HandleCreateUser(c *fiber.Ctx) error {
 	}
 
 	// 3. convert domainEntity type into databaseDto type
-	dbEntity, _ := types.NewMongoDbUserEntity(*userEntity)
-	createdUser, err := uh.repo.CreateUser(c.Context(), (dbEntity))
+	createdUser, err := uh.repo.CreateUser(userEntity)
 	if err != nil {
 		return err
 	}
 
 	// Now convert the returned domain entity into the response dto form
 	userResponseDto := types.CreateUserResponse{
-		ID:        createdUser.ID,
+		ID:        strconv.Itoa(int(createdUser.ID)),
 		FirstName: createdUser.FirstName,
 		LastName:  createdUser.LastName,
 		Email:     createdUser.Email,
@@ -125,8 +127,13 @@ func (uh *UserHandler) HandleCreateUser(c *fiber.Ctx) error {
 	➜ Empty response or error if there is any
 */
 func (uh *UserHandler) HandleDeleteUser(c *fiber.Ctx) error {
-	userID := c.Params("id")
-	err := uh.repo.DeleteUserById(c.Context(), userID)
+	id := c.Params("id")
+	user_id, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return errors.New("internal server error while deleting user from database")
+	}
+
+	err = uh.repo.DeleteUserById(user_id)
 	if err != nil {
 		return errors.New("internal server error while deleting user from database")
 	}
@@ -145,26 +152,30 @@ func (uh *UserHandler) HandleDeleteUser(c *fiber.Ctx) error {
 	➜ Empty response or error if there is any
 */
 func (uh *UserHandler) HandleUpdateUser(c *fiber.Ctx) error {
-	userId := c.Params("id")
-	updateRequestDto := new(types.UpdateUserRequest)
-	err := c.BodyParser(&updateRequestDto)
+	id := c.Params("id")
+
+	user_id, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		fmt.Println("ok")
-
-		return err
-	}
-	fmt.Println(updateRequestDto.FirstName)
-
-	// // check for allowed fields to be updated from the provided data to check if at least one of them is there
-	// fieldExists, ok := reflect.TypeOf(updateRequestDto).FieldByName("FirstName")
-	// if !ok {
-	// 	fieldExists, ok = reflect
-	// }
-
-	err = uh.repo.UpdateUserById(c.Context(), userId, *updateRequestDto)
-	if err != nil {
-		return err
+		return errors.New("internal server error while deleting user from database")
 	}
 
-	return c.JSON("updated")
+	var updateRequestDto *types.UpdateUserRequest
+	err = c.BodyParser(&updateRequestDto)
+	if err != nil {
+		return errors.New("internal server error while deleting user from database")
+	}
+
+	// check for allowed fields to be updated from the provided data to check if at least one of them is there
+	_, firstNameFieldExists := reflect.TypeOf(updateRequestDto).FieldByName("FirstName")
+	_, lastNameFieldExists := reflect.TypeOf(updateRequestDto).FieldByName("LastName")
+	if !firstNameFieldExists && !lastNameFieldExists {
+		return types.InvalidUpdateParameterErr{Msg: types.InvalidUpdateParameterMsg}
+	}
+
+	updatedUser, err := uh.repo.UpdateUserById(user_id, updateRequestDto)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(updatedUser)
 }

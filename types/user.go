@@ -24,7 +24,7 @@ var (
 
 type User struct {
 	// define the bson version as an omitempty so when we create an instance and not provide the id, it will not be passed as an empty so it won't be persisted as an empty id, instead it will be created via the db
-	ID                string
+	ID                int64
 	FirstName         string
 	LastName          string
 	Email             string
@@ -49,26 +49,26 @@ func (pu *PostgresUser) IsSameDomainEntity(u *User) bool {
 func (user *User) Validate() error {
 	if len(user.FirstName) < minFirstNameLength {
 		return InvalidFirstNameErr{
-			msg: InvalidFirstNameErrMsg,
+			Msg: InvalidFirstNameErrMsg,
 		}
 	}
 
 	if len(user.LastName) < minLastNameLength {
 		return InvalidLastNameErr{
-			msg: InvalidLastNameErrMsg,
+			Msg: InvalidLastNameErrMsg,
 		}
 
 	}
 
 	if len(user.EncryptedPassword) < minPasswordLength {
 		return InvalidPasswordErr{
-			msg: InvalidPasswordErrMsg,
+			Msg: InvalidPasswordErrMsg,
 		}
 	}
 
 	if !isEmailValid(user.Email) {
 		return InvalidEmailErr{
-			msg: InvalidEmailErrMsg,
+			Msg: InvalidEmailErrMsg,
 		}
 	}
 
@@ -85,7 +85,7 @@ func (u *User) Update(field string, value interface{}) error {
 			{
 				correctType := reflect.TypeOf(value).Kind() == reflect.String
 				if !correctType {
-					return InvalidFirstNameErr{msg: InvalidFirstNameErrMsg}
+					return InvalidFirstNameErr{Msg: InvalidFirstNameErrMsg}
 				}
 				fmt.Printf("it was %v ", u.FirstName)
 				u.FirstName = value.(string)
@@ -95,7 +95,7 @@ func (u *User) Update(field string, value interface{}) error {
 			{
 				correctType := reflect.TypeOf(value).Kind() == reflect.String
 				if !correctType {
-					return InvalidLastNameErr{msg: InvalidLastNameErrMsg}
+					return InvalidLastNameErr{Msg: InvalidLastNameErrMsg}
 				}
 				fmt.Printf("it was %v ", u.LastName)
 				u.LastName = value.(string)
@@ -104,7 +104,7 @@ func (u *User) Update(field string, value interface{}) error {
 		}
 
 	} else {
-		return InvalidUpdateParameterErr{msg: InvalidUpdateParameterMsg}
+		return InvalidUpdateParameterErr{Msg: InvalidUpdateParameterMsg}
 	}
 	return nil
 }
@@ -127,52 +127,43 @@ func isEmailValid(e string) bool {
 }
 
 type InvalidFirstNameErr struct {
-	msg string
+	Msg string
 }
 
 func (e InvalidFirstNameErr) Error() string {
-	return e.msg
+	return e.Msg
 }
 
 type InvalidLastNameErr struct {
-	msg string
+	Msg string
 }
 
 func (e InvalidLastNameErr) Error() string {
-	return e.msg
+	return e.Msg
 }
 
 type InvalidPasswordErr struct {
-	msg string
+	Msg string
 }
 
 func (e InvalidPasswordErr) Error() string {
-	return e.msg
+	return e.Msg
 }
 
 type InvalidEmailErr struct {
-	msg string
+	Msg string
 }
 
 func (e InvalidEmailErr) Error() string {
-	return e.msg
+	return e.Msg
 }
 
 type InvalidUpdateParameterErr struct {
-	msg string
+	Msg string
 }
 
 func (e InvalidUpdateParameterErr) Error() string {
-	return e.msg
-}
-
-type UserMongoDb struct {
-	// define the bson version as an omitempty so when we create an instance and not provide the id, it will not be passed as an empty so it won't be persisted as an empty id, instead it will be created via the db
-	ID                string `bson:"_id,omitempty" json:"id,omitempty"`
-	FirstName         string `bson:"first_name" json:"first_name"`
-	LastName          string `bson:"last_name" json:"last_name"`
-	Email             string `bson:"email" json:"email"`
-	EncryptedPassword string `bson:"encrypted_password" json:"-"` // _ in json because i won't return it in the json representation of this
+	return e.Msg
 }
 
 // for handler usage, not for db usage
@@ -191,6 +182,15 @@ type CreateUserResponse struct {
 	Email     string `json:"email"`
 }
 
+type UserMongoDb struct {
+	// define the bson version as an omitempty so when we create an instance and not provide the id, it will not be passed as an empty so it won't be persisted as an empty id, instead it will be created via the db
+	ID                string `bson:"_id,omitempty" json:"id,omitempty"`
+	FirstName         string `bson:"first_name" json:"first_name"`
+	LastName          string `bson:"last_name" json:"last_name"`
+	Email             string `bson:"email" json:"email"`
+	EncryptedPassword string `bson:"encrypted_password" json:"-"` // _ in json because i won't return it in the json representation of this
+}
+
 // to allow user to send one or more fields we set the fields as a map with string key and an interface as a value
 type UpdateUserRequest struct {
 	// btw the allowed fiedls to be updated are the firstName and lastName
@@ -199,9 +199,9 @@ type UpdateUserRequest struct {
 }
 
 // method to convert from web-req-data to domain-entity-data
-func NewUserEntity(dto CreateUserRequest) (*User, error) {
-	// encrypt the password
-	hashed, err := bcrypt.GenerateFromPassword([]byte(dto.Password), COST)
+func NewUserEntityFromUserRequestDto(dto CreateUserRequest) (*User, error) {
+
+	hashed, err := EncryptPassword(dto.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -212,6 +212,15 @@ func NewUserEntity(dto CreateUserRequest) (*User, error) {
 		Email:             dto.Email,
 		EncryptedPassword: string(hashed),
 	}, nil
+}
+
+func EncryptPassword(password string) (string, error) {
+	// encrypt the password
+	hashed, err := bcrypt.GenerateFromPassword([]byte(password), COST)
+	if err != nil {
+		return password, err
+	}
+	return string(hashed), nil
 }
 
 // method to convert form domain-entity-data to database-data type

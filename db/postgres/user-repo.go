@@ -3,18 +3,12 @@ package postgres
 import (
 	"errors"
 	"log"
-	"strconv"
 
 	"github.com/FadyGamilM/hotelreservationapi/types"
 )
 
-// GetUsers(context.Context) ([]*types.User, error)
-// CreateUser(context.Context, *types.UserMongoDb) (*types.User, error)
-// GetUserById(context.Context, string) (*types.User, error)
-// DeleteUserById(context.Context, string) error
-// UpdateUserById(context.Context, string, types.UpdateUserRequest) error
-
 func (upr *UserPostgresRepo) GetUsers() ([]*types.User, error) {
+	defer upr.db.Close()
 	ctx, cancel := CreateContext()
 	defer cancel()
 
@@ -48,25 +42,26 @@ func (upr *UserPostgresRepo) GetUsers() ([]*types.User, error) {
 	return users, nil
 }
 
-func (upr *UserPostgresRepo) GetUserById(id string) (*types.User, error) {
+func (upr *UserPostgresRepo) GetUserById(id int64) (*types.User, error) {
+	defer upr.db.Close()
 	ctx, cancel := CreateContext()
 	defer cancel()
 
-	userID, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		log.Printf("[REPO] | error while converting user id from string to int64 to execute db query")
-		return nil, err
-	}
+	// userID, err := strconv.ParseInt(id, 10, 64)
+	// if err != nil {
+	// 	log.Printf("[REPO] | error while converting user id from string to int64 to execute db query")
+	// 	return nil, err
+	// }
 
 	query := `
 		SELECT * FROM users 
 		WHERE id = $1
 	`
 
-	row := upr.db.QueryRowContext(ctx, query, userID)
+	row := upr.db.QueryRowContext(ctx, query, id)
 
 	var user *types.User
-	err = row.Scan(
+	err := row.Scan(
 		&user.ID,
 		&user.FirstName,
 		&user.LastName,
@@ -82,6 +77,7 @@ func (upr *UserPostgresRepo) GetUserById(id string) (*types.User, error) {
 }
 
 func (upr *UserPostgresRepo) CreateUser(domainUser *types.User) (*types.User, error) {
+	defer upr.db.Close()
 	ctx, cancel := CreateContext()
 	defer cancel()
 
@@ -122,9 +118,16 @@ func (upr *UserPostgresRepo) CreateUser(domainUser *types.User) (*types.User, er
 	}
 }
 
-func (upr *UserPostgresRepo) UpdateUserById(id string, updatedValues *types.UpdateUserRequest) (*types.User, error) {
+func (upr *UserPostgresRepo) UpdateUserById(id int64, updatedValues *types.UpdateUserRequest) (*types.User, error) {
+	defer upr.db.Close()
 	ctx, cancel := CreateContext()
 	defer cancel()
+
+	// userID, err := strconv.ParseInt(id, 10, 64)
+	// if err != nil {
+	// 	log.Printf("[REPO] | error while converting user id from string to int64 to execute db query")
+	// 	return nil, err
+	// }
 
 	fetchUserByIdQuery := `SELECT * FROM users WHERE id = $1`
 	var updatedUser *types.User
@@ -240,22 +243,23 @@ func (upr *UserPostgresRepo) UpdateUserById(id string, updatedValues *types.Upda
 	return updatedUser, nil
 }
 
-func (upr *UserPostgresRepo) DeleteUserById(id string) error {
+func (upr *UserPostgresRepo) DeleteUserById(id int64) error {
+	defer upr.db.Close()
 	ctx, cancel := CreateContext()
 	defer cancel()
 
-	userID, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		log.Printf("[REPO] | error while converting user id from string to int64 to execute db query")
-		return err
-	}
+	// userID, err := strconv.ParseInt(id, 10, 64)
+	// if err != nil {
+	// 	log.Printf("[REPO] | error while converting user id from string to int64 to execute db query")
+	// 	return err
+	// }
 
 	query := `
 		DELETE FROM users 
 		WHERE id = $1
 	`
 
-	_, err = upr.db.ExecContext(ctx, query, userID)
+	_, err := upr.db.ExecContext(ctx, query, id)
 	if err != nil {
 		log.Printf("[REPO] | Error while trying to delete user from database : %v \n", err)
 		return err
