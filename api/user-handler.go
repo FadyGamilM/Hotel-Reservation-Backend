@@ -2,7 +2,7 @@ package api
 
 import (
 	"errors"
-	"reflect"
+	"fmt"
 	"strconv"
 
 	"github.com/FadyGamilM/hotelreservationapi/db"
@@ -158,21 +158,28 @@ func (uh *UserHandler) HandleUpdateUser(c *fiber.Ctx) error {
 	if err != nil {
 		return errors.New("internal server error while deleting user from database")
 	}
+	fmt.Println("heeeeere 0")
 
-	var updateRequestDto *types.UpdateUserRequest
+	updateRequestDto := new(types.UpdateUserRequest)
 	err = c.BodyParser(&updateRequestDto)
 	if err != nil {
+		fmt.Println(updateRequestDto.FirstName)
+		fmt.Println("heeeeere 5")
+		fmt.Println(err.Error())
 		return errors.New("internal server error while deleting user from database")
-	}
 
-	// check for allowed fields to be updated from the provided data to check if at least one of them is there
-	_, firstNameFieldExists := reflect.TypeOf(updateRequestDto).FieldByName("FirstName")
-	_, lastNameFieldExists := reflect.TypeOf(updateRequestDto).FieldByName("LastName")
-	if !firstNameFieldExists && !lastNameFieldExists {
-		return types.InvalidUpdateParameterErr{Msg: types.InvalidUpdateParameterMsg}
 	}
+	fmt.Println("heeeeere 1")
+
+	// // check for allowed fields to be updated from the provided data to check if at least one of them is there
+	// _, firstNameFieldExists := reflect.TypeOf(updateRequestDto).FieldByName("FirstName")
+	// _, lastNameFieldExists := reflect.TypeOf(updateRequestDto).FieldByName("LastName")
+	// if !firstNameFieldExists && !lastNameFieldExists {
+	// 	return types.InvalidUpdateParameterErr{Msg: types.InvalidUpdateParameterMsg}
+	// }
 
 	updatedUser, err := uh.repo.UpdateUserById(user_id, updateRequestDto)
+	fmt.Println("heeeeere")
 	if err != nil {
 		return err
 	}
