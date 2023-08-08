@@ -184,6 +184,11 @@ type CreateUserResponse struct {
 	Email     string `json:"email"`
 }
 
+type UpdateUserResponse struct {
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+}
+
 type GetUserResponse struct {
 	ID        string `json:"id"`
 	FirstName string `json:"first_name"`

@@ -158,18 +158,15 @@ func (uh *UserHandler) HandleUpdateUser(c *fiber.Ctx) error {
 	if err != nil {
 		return errors.New("internal server error while deleting user from database")
 	}
-	fmt.Println("heeeeere 0")
 
 	updateRequestDto := new(types.UpdateUserRequest)
 	err = c.BodyParser(&updateRequestDto)
 	if err != nil {
 		fmt.Println(updateRequestDto.FirstName)
-		fmt.Println("heeeeere 5")
 		fmt.Println(err.Error())
 		return errors.New("internal server error while deleting user from database")
 
 	}
-	fmt.Println("heeeeere 1")
 
 	// // check for allowed fields to be updated from the provided data to check if at least one of them is there
 	// _, firstNameFieldExists := reflect.TypeOf(updateRequestDto).FieldByName("FirstName")
@@ -179,10 +176,12 @@ func (uh *UserHandler) HandleUpdateUser(c *fiber.Ctx) error {
 	// }
 
 	updatedUser, err := uh.repo.UpdateUserById(user_id, updateRequestDto)
-	fmt.Println("heeeeere")
+	updatedUserDto := new(types.UpdateUserResponse)
+	updatedUserDto.FirstName = updatedUser.FirstName
+	updatedUserDto.LastName = updatedUser.LastName
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(updatedUser)
+	return c.JSON(updatedUserDto)
 }
