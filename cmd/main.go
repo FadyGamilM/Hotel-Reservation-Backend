@@ -22,7 +22,7 @@ func main() {
 	flag.Parse()
 
 	// initilize postgres user store impl
-	developmentDSN := "host=localhost port=5432 user=fady password=fady dbname=cfedb sslmode=disable timezone=UTC connect_timeout=5"
+	developmentDSN := "host=localhost port=1111 user=postgres password=postgres dbname=hrdb sslmode=disable timezone=UTC connect_timeout=5"
 	userPostgresRepo, err := postgres.NewPostgresRepo(developmentDSN)
 	if err != nil {
 		log.Printf("error while creating a new postgres repository instance")

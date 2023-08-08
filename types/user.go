@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -32,11 +33,13 @@ type User struct {
 }
 
 type PostgresUser struct {
-	ID                int64  `json:"id"`
-	FirstName         string `json:"first_name"`
-	LastName          string `json:"last_name"`
-	Email             string `json:"email"`
-	EncryptedPassword string `json:"encrypted_password"`
+	ID                int64     `json:"id"`
+	FirstName         string    `json:"first_name"`
+	LastName          string    `json:"last_name"`
+	Email             string    `json:"email"`
+	EncryptedPassword string    `json:"encrypted_password"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
 }
 
 func (pu *PostgresUser) IsSameDomainEntity(u *User) bool {
@@ -176,6 +179,12 @@ type CreateUserRequest struct {
 }
 
 type CreateUserResponse struct {
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Email     string `json:"email"`
+}
+
+type GetUserResponse struct {
 	ID        string `json:"id"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`

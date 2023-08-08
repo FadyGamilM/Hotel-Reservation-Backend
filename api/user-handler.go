@@ -29,10 +29,10 @@ func (uh *UserHandler) HandleGetUsers(c *fiber.Ctx) error {
 		return err
 	}
 
-	responseDtos := []types.CreateUserResponse{}
+	responseDtos := []types.GetUserResponse{}
 
 	for _, domainUser := range users {
-		responseDtos = append(responseDtos, types.CreateUserResponse{
+		responseDtos = append(responseDtos, types.GetUserResponse{
 			ID:        strconv.Itoa(int(domainUser.ID)),
 			FirstName: domainUser.FirstName,
 			LastName:  domainUser.LastName,
@@ -59,7 +59,7 @@ func (uh *UserHandler) HandleGetUserByID(c *fiber.Ctx) error {
 	}
 
 	// convert to responseDto
-	userResponseDto := types.CreateUserResponse{
+	userResponseDto := types.GetUserResponse{
 		ID:        strconv.Itoa(int(user.ID)),
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
@@ -107,7 +107,7 @@ func (uh *UserHandler) HandleCreateUser(c *fiber.Ctx) error {
 
 	// Now convert the returned domain entity into the response dto form
 	userResponseDto := types.CreateUserResponse{
-		ID:        strconv.Itoa(int(createdUser.ID)),
+		// ID:        strconv.Itoa(int(createdUser.ID)),
 		FirstName: createdUser.FirstName,
 		LastName:  createdUser.LastName,
 		Email:     createdUser.Email,

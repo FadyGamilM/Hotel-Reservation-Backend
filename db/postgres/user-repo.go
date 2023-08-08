@@ -2,13 +2,14 @@ package postgres
 
 import (
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/FadyGamilM/hotelreservationapi/types"
 )
 
 func (upr *UserPostgresRepo) GetUsers() ([]*types.User, error) {
-	defer upr.db.Close()
+
 	ctx, cancel := CreateContext()
 	defer cancel()
 
@@ -24,18 +25,26 @@ func (upr *UserPostgresRepo) GetUsers() ([]*types.User, error) {
 
 	var users []*types.User
 	for rows.Next() {
-		var user *types.User
+		dbUser := new(types.PostgresUser)
 		err := rows.Scan(
-			&user.ID,
-			&user.FirstName,
-			&user.LastName,
-			&user.Email,
-			&user.EncryptedPassword,
+			&dbUser.ID,
+			&dbUser.FirstName,
+			&dbUser.LastName,
+			&dbUser.Email,
+			&dbUser.EncryptedPassword,
+			&dbUser.CreatedAt,
+			&dbUser.UpdatedAt,
 		)
 		if err != nil {
 			log.Printf("[REPO] | Error while scanning user from db to domain entity type : %v \n", err)
 			return nil, err
 		}
+		user := new(types.User)
+		user.ID = dbUser.ID
+		user.FirstName = dbUser.FirstName
+		user.LastName = dbUser.LastName
+		user.Email = dbUser.Email
+		user.EncryptedPassword = dbUser.EncryptedPassword
 		users = append(users, user)
 	}
 
@@ -43,7 +52,7 @@ func (upr *UserPostgresRepo) GetUsers() ([]*types.User, error) {
 }
 
 func (upr *UserPostgresRepo) GetUserById(id int64) (*types.User, error) {
-	defer upr.db.Close()
+
 	ctx, cancel := CreateContext()
 	defer cancel()
 
@@ -60,56 +69,50 @@ func (upr *UserPostgresRepo) GetUserById(id int64) (*types.User, error) {
 
 	row := upr.db.QueryRowContext(ctx, query, id)
 
-	var user *types.User
+	user := new(types.User)
+	dbUser := new(types.PostgresUser)
 	err := row.Scan(
-		&user.ID,
-		&user.FirstName,
-		&user.LastName,
-		&user.Email,
-		&user.EncryptedPassword,
+		&dbUser.ID,
+		&dbUser.FirstName,
+		&dbUser.LastName,
+		&dbUser.Email,
+		&dbUser.EncryptedPassword,
+		&dbUser.CreatedAt,
+		&dbUser.UpdatedAt,
 	)
 	if err != nil {
 		log.Printf("[REPO] | Error while scanning user from db to domain entity type : %v \n", err)
 		return nil, err
 	}
 
+	user.ID = dbUser.ID
+	user.FirstName = dbUser.FirstName
+	user.LastName = dbUser.LastName
+	user.Email = dbUser.Email
+	user.EncryptedPassword = dbUser.EncryptedPassword
+
 	return user, nil
 }
 
 func (upr *UserPostgresRepo) CreateUser(domainUser *types.User) (*types.User, error) {
-	defer upr.db.Close()
+
 	ctx, cancel := CreateContext()
 	defer cancel()
 
 	query := `
 	INSERT INTO users (first_name, last_name, email, encrypted_password)
 	VALUES ($1, $2, $3, $4)
+	RETURNING id, first_name, last_name, email, encrypted_password
 	`
 
-	res, err := upr.db.ExecContext(ctx, query, domainUser.FirstName, domainUser.LastName, domainUser.Email, domainUser.EncryptedPassword)
+	dbUser := new(types.PostgresUser)
+	err := upr.db.QueryRowContext(ctx, query, domainUser.FirstName, domainUser.LastName, domainUser.Email, domainUser.EncryptedPassword).Scan(&dbUser.ID, &dbUser.FirstName, &dbUser.LastName, &dbUser.Email, &dbUser.EncryptedPassword)
 	if err != nil {
 		log.Printf("[REPO] | Error while inserting user to database : %v \n", err)
 		return nil, err
 	}
-	insertedUserID, err := res.LastInsertId()
-	if err != nil {
-		log.Printf("[REPO] | Error while trying to fetch the id of last inserted user to database : %v \n", err)
-		return nil, err
-	}
-	var dbUser *types.PostgresUser
-	fetchUserByIdQuery := `SELECT * FROM users WHERE id = $1`
-	insertedUserRow := upr.db.QueryRowContext(ctx, fetchUserByIdQuery, insertedUserID)
-	err = insertedUserRow.Scan(
-		&dbUser.ID,
-		&dbUser.FirstName,
-		&dbUser.LastName,
-		&dbUser.Email,
-		&dbUser.EncryptedPassword,
-	)
-	if err != nil {
-		log.Printf("[REPO] | Error while trying to fetch the last inserted user to database : %v \n", err)
-		return nil, err
-	}
+	fmt.Println(dbUser.ID)
+
 	if dbUser.IsSameDomainEntity(domainUser) {
 		return domainUser, nil
 	} else {
@@ -119,7 +122,7 @@ func (upr *UserPostgresRepo) CreateUser(domainUser *types.User) (*types.User, er
 }
 
 func (upr *UserPostgresRepo) UpdateUserById(id int64, updatedValues *types.UpdateUserRequest) (*types.User, error) {
-	defer upr.db.Close()
+
 	ctx, cancel := CreateContext()
 	defer cancel()
 
@@ -244,7 +247,7 @@ func (upr *UserPostgresRepo) UpdateUserById(id int64, updatedValues *types.Updat
 }
 
 func (upr *UserPostgresRepo) DeleteUserById(id int64) error {
-	defer upr.db.Close()
+
 	ctx, cancel := CreateContext()
 	defer cancel()
 
