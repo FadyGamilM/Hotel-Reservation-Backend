@@ -13,7 +13,7 @@ import (
 )
 
 type UserPostgresRepo struct {
-	db *sql.DB
+	DB *sql.DB
 }
 
 type DbArgs struct {
@@ -38,7 +38,7 @@ func NewPostgresRepo(dsn string) (*UserPostgresRepo, error) {
 		return nil, err
 	}
 
-	return &UserPostgresRepo{db: conn_pool}, nil
+	return &UserPostgresRepo{DB: conn_pool}, nil
 }
 
 // function to test the connection before applying the connection

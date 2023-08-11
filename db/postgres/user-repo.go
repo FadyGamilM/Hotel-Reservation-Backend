@@ -17,7 +17,7 @@ func (upr *UserPostgresRepo) GetUsers() ([]*types.User, error) {
 		SELECT * FROM users 
 	`
 
-	rows, err := upr.db.QueryContext(ctx, query)
+	rows, err := upr.DB.QueryContext(ctx, query)
 	if err != nil {
 		log.Printf("[REPO] | Error while fetching users from database : %v \n", err)
 		return nil, err
@@ -67,7 +67,7 @@ func (upr *UserPostgresRepo) GetUserById(id int64) (*types.User, error) {
 		WHERE id = $1
 	`
 
-	row := upr.db.QueryRowContext(ctx, query, id)
+	row := upr.DB.QueryRowContext(ctx, query, id)
 
 	user := new(types.User)
 	dbUser := new(types.PostgresUser)
@@ -106,7 +106,7 @@ func (upr *UserPostgresRepo) CreateUser(domainUser *types.User) (*types.User, er
 	`
 
 	dbUser := new(types.PostgresUser)
-	err := upr.db.QueryRowContext(ctx, query, domainUser.FirstName, domainUser.LastName, domainUser.Email, domainUser.EncryptedPassword).Scan(&dbUser.ID, &dbUser.FirstName, &dbUser.LastName, &dbUser.Email, &dbUser.EncryptedPassword)
+	err := upr.DB.QueryRowContext(ctx, query, domainUser.FirstName, domainUser.LastName, domainUser.Email, domainUser.EncryptedPassword).Scan(&dbUser.ID, &dbUser.FirstName, &dbUser.LastName, &dbUser.Email, &dbUser.EncryptedPassword)
 	if err != nil {
 		log.Printf("[REPO] | Error while inserting user to database : %v \n", err)
 		return nil, err
@@ -129,7 +129,7 @@ func (upr *UserPostgresRepo) UpdateUserById(id int64, updatedValues *types.Updat
 	fetchUserByIdQuery := `SELECT id, first_name, last_name, email, encrypted_password FROM users WHERE id = $1`
 
 	oldUser := new(types.User)
-	row := upr.db.QueryRowContext(ctx, fetchUserByIdQuery, id)
+	row := upr.DB.QueryRowContext(ctx, fetchUserByIdQuery, id)
 	err := row.Scan(
 		&oldUser.ID,
 		&oldUser.FirstName,
@@ -175,7 +175,7 @@ func (upr *UserPostgresRepo) UpdateUserById(id int64, updatedValues *types.Updat
 		var insertedUserID int64
 		updatedUserRow := new(types.PostgresUser)
 		user := new(types.User)
-		err := upr.db.QueryRowContext(ctx, updateFirstNameQuery, updatedFirstName, id).Scan(&insertedUserID, &updatedUserRow.FirstName, &updatedUserRow.LastName, &updatedUserRow.Email, &updatedUserRow.EncryptedPassword)
+		err := upr.DB.QueryRowContext(ctx, updateFirstNameQuery, updatedFirstName, id).Scan(&insertedUserID, &updatedUserRow.FirstName, &updatedUserRow.LastName, &updatedUserRow.Email, &updatedUserRow.EncryptedPassword)
 		if err != nil {
 			log.Printf("[REPO] | Error while trying to fetch the id of last inserted user to database : %v \n", err)
 		}
@@ -190,7 +190,7 @@ func (upr *UserPostgresRepo) UpdateUserById(id int64, updatedValues *types.Updat
 		var insertedUserID int64
 		updatedUserRow := new(types.PostgresUser)
 		user := new(types.User)
-		err := upr.db.QueryRowContext(ctx, updateLastNameQuery, updatedLastName, id).Scan(&insertedUserID, &updatedUserRow.FirstName, &updatedUserRow.LastName, &updatedUserRow.Email, &updatedUserRow.EncryptedPassword)
+		err := upr.DB.QueryRowContext(ctx, updateLastNameQuery, updatedLastName, id).Scan(&insertedUserID, &updatedUserRow.FirstName, &updatedUserRow.LastName, &updatedUserRow.Email, &updatedUserRow.EncryptedPassword)
 		if err != nil {
 			log.Printf("[REPO] | Error while trying to fetch the id of last inserted user to database : %v \n", err)
 		}
@@ -205,7 +205,7 @@ func (upr *UserPostgresRepo) UpdateUserById(id int64, updatedValues *types.Updat
 		var insertedUserID int64
 		updatedUserRow := new(types.PostgresUser)
 		user := new(types.User)
-		err := upr.db.QueryRowContext(ctx, updateFirstAndLastNameQuery, updatedFirstName, updatedLastName, id).Scan(&insertedUserID, &updatedUserRow.FirstName, &updatedUserRow.LastName, &updatedUserRow.Email, &updatedUserRow.EncryptedPassword)
+		err := upr.DB.QueryRowContext(ctx, updateFirstAndLastNameQuery, updatedFirstName, updatedLastName, id).Scan(&insertedUserID, &updatedUserRow.FirstName, &updatedUserRow.LastName, &updatedUserRow.Email, &updatedUserRow.EncryptedPassword)
 		if err != nil {
 			log.Printf("[REPO] | Error while trying to fetch the id of last inserted user to database : %v \n", err)
 		}
@@ -236,7 +236,7 @@ func (upr *UserPostgresRepo) DeleteUserById(id int64) error {
 		WHERE id = $1
 	`
 
-	_, err := upr.db.ExecContext(ctx, query, id)
+	_, err := upr.DB.ExecContext(ctx, query, id)
 	if err != nil {
 		log.Printf("[REPO] | Error while trying to delete user from database : %v \n", err)
 		return err
