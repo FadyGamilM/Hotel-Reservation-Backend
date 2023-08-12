@@ -1,5 +1,7 @@
 package db
 
 type Store struct {
-	User UserRepo
+	User  UserRepo
+	Hotel HotelRepo
+	Room  RoomRepo
 }
