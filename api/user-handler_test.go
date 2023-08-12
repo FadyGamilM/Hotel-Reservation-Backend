@@ -38,7 +38,7 @@ func NewTestingDB(t *testing.T) *testDB {
 	// return the testingdb with the appropriate repos
 	return &testDB{
 		userRepo: &postgres.UserPostgresRepo{
-			DB: connPool,
+			// DB: connPool,
 		},
 	}
 }

@@ -12,8 +12,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type UserPostgresRepo struct {
-	DB *sql.DB
+type PostgresRepo struct {
+	db *sql.DB
 }
 
 type DbArgs struct {
@@ -23,8 +23,8 @@ type DbArgs struct {
 	maxDbLifeTime time.Duration
 }
 
-// factory pattern
-func NewPostgresRepo(dsn string) (*UserPostgresRepo, error) {
+// factory pattern which returns a new postgresRepo instance, PostgresRepo is a wrapper above the sql package
+func NewPostgresRepo(dsn string) (*PostgresRepo, error) {
 	db_args := DbArgs{
 		DbTimeOut:     3 * time.Second,
 		maxOpenDbConn: 10,
@@ -38,7 +38,7 @@ func NewPostgresRepo(dsn string) (*UserPostgresRepo, error) {
 		return nil, err
 	}
 
-	return &UserPostgresRepo{DB: conn_pool}, nil
+	return &PostgresRepo{db: conn_pool}, nil
 }
 
 // function to test the connection before applying the connection

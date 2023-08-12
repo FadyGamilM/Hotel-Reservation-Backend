@@ -23,10 +23,12 @@ func main() {
 
 	// initilize postgres user store impl
 	developmentDSN := "host=localhost port=1111 user=postgres password=postgres dbname=hrdb sslmode=disable timezone=UTC connect_timeout=5"
-	userPostgresRepo, err := postgres.NewPostgresRepo(developmentDSN)
+	postgresRepo, err := postgres.NewPostgresRepo(developmentDSN)
 	if err != nil {
 		log.Printf("error while creating a new postgres repository instance")
 	}
+
+	userPostgresRepo := postgres.NewUserPostgresRepo(postgresRepo)
 
 	// initialize user handler
 	userHandler := api.NewUserHandler(userPostgresRepo)
