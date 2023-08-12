@@ -1,5 +1,7 @@
 package types
 
+import "time"
+
 type Room struct {
 	ID         int64
 	RoomNumber string
@@ -22,4 +24,13 @@ type CreateRoomRequest struct {
 
 type CreateRoomResponse struct {
 	GetRoomResponse
+}
+
+type PostgresRoom struct {
+	ID         int64
+	RoomNumber string
+	RoomTypeID int64
+	HotelID    int64
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
