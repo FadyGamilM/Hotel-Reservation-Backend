@@ -38,7 +38,8 @@ CREATE TABLE room_types (
 CREATE TABLE rooms (
   id BIGSERIAL PRIMARY KEY,
   room_number VARCHAR UNIQUE NOT NULL,
-  room_type_id BIGINT NOT NULL REFERENCES hotels(id)
+  room_type_id BIGINT NOT NULL REFERENCES room_types(id),
+  hotel_id BIGINT NOT NULL REFERENCES hotels(id)
 );
 
 
