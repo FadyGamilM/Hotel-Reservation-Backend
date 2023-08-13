@@ -85,7 +85,7 @@ func (h *HotelHandler) HandleCreateHotel(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	var createHotelResponse *types.CreateHotelResponse
+	createHotelResponse := new(types.CreateHotelResponse)
 	createHotelResponse.ID = createdHotel.ID
 	createHotelResponse.HotelName = createdHotel.HotelName
 	createHotelResponse.Location = createdHotel.Location

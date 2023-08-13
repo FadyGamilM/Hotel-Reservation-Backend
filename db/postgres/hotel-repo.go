@@ -1,6 +1,9 @@
 package postgres
 
-import "github.com/FadyGamilM/hotelreservationapi/types"
+import (
+	"github.com/FadyGamilM/hotelreservationapi/types"
+	"github.com/gofiber/fiber/v2/log"
+)
 
 type HotelPostgresRepo struct {
 	dbRepo *PostgresRepo
@@ -97,11 +100,13 @@ func (hr *HotelPostgresRepo) CreateHotel(hotels types.Hotel) (*types.Hotel, erro
 	defer cancel()
 
 	postgresHotelEntity := new(types.PostgresHotel)
-	err := hr.dbRepo.db.QueryRowContext(ctx, CreateHotelQuery, hotels.HotelName, hotels.Location, hotels.Stars).Scan(&postgresHotelEntity)
+	err := hr.dbRepo.db.QueryRowContext(ctx, CreateHotelQuery, hotels.HotelName, hotels.Location, hotels.Stars).Scan(&postgresHotelEntity.ID, &postgresHotelEntity.HotelName, &postgresHotelEntity.Location, &postgresHotelEntity.Stars, &postgresHotelEntity.CreatedAt, &postgresHotelEntity.UpdatedAt)
 	if err != nil {
+		log.Info(err)
 		return nil, err
 	}
 
+	log.Info(postgresHotelEntity)
 	domainHotelEntity := new(types.Hotel)
 	domainHotelEntity.ID = postgresHotelEntity.ID
 	domainHotelEntity.HotelName = postgresHotelEntity.HotelName
