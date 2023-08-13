@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/FadyGamilM/hotelreservationapi/api"
+	"github.com/FadyGamilM/hotelreservationapi/db"
 	"github.com/FadyGamilM/hotelreservationapi/db/postgres"
 	"github.com/gofiber/fiber/v2"
 )
@@ -23,23 +24,36 @@ func main() {
 
 	// initilize postgres user store impl
 	developmentDSN := "host=localhost port=1111 user=postgres password=postgres dbname=hrdb sslmode=disable timezone=UTC connect_timeout=5"
-	postgresRepo, err := postgres.NewPostgresRepo(developmentDSN)
+	postgresDB, err := postgres.NewPostgresRepo(developmentDSN)
 	if err != nil {
 		log.Printf("error while creating a new postgres repository instance")
 	}
 
-	userPostgresRepo := postgres.NewUserPostgresRepo(postgresRepo)
+	userPostgresRepo := postgres.NewUserPostgresRepo(postgresDB)
+	hotelPostgresRepo := postgres.NewHotelPostgresRepo(postgresDB)
+
+	dbRepoStore := db.Store{
+		User:  userPostgresRepo,
+		Hotel: hotelPostgresRepo,
+	}
 
 	// initialize user handler
-	userHandler := api.NewUserHandler(userPostgresRepo)
+	userHandler := api.NewUserHandler(dbRepoStore)
+	hotelHandler := api.NewHotelHandler(&dbRepoStore)
 
 	// group and versioning
 	users_router_v1 := app.Group("/api/v1/users")
+	hotels_router_v1 := app.Group("/api/v1/hotels")
+
 	users_router_v1.Get("/", userHandler.HandleGetUsers)
 	users_router_v1.Get("/:id", userHandler.HandleGetUserByID)
 	users_router_v1.Post("/", userHandler.HandleCreateUser)
 	users_router_v1.Delete("/:id", userHandler.HandleDeleteUser)
 	users_router_v1.Put("/:id", userHandler.HandleUpdateUser)
+
+	hotels_router_v1.Get("/", hotelHandler.HandleGetHotels)
+	hotels_router_v1.Get("/:id", hotelHandler.HandleGetHotelByID)
+	hotels_router_v1.Post("/", hotelHandler.HandleCreateHotel)
 
 	// listen to the port and start the server
 	app.Listen(*listenAddr)

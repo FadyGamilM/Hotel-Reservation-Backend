@@ -12,19 +12,21 @@ import (
 )
 
 type UserHandler struct {
-	repo db.UserRepo
+	repo db.Store
 }
 
-func NewUserHandler(r db.UserRepo) *UserHandler {
+// the handlers factories are receiving a db repository store without knowing the details of the specific repos the handler want
+// then the implementation of the handler factory are utilizing the details of the db repo store (user, hotel, room, ..)
+func NewUserHandler(s db.Store) *UserHandler {
 	return &UserHandler{
-		repo: r,
+		repo: s,
 	}
 }
 
 // handlers
 func (uh *UserHandler) HandleGetUsers(c *fiber.Ctx) error {
 
-	users, err := uh.repo.GetUsers()
+	users, err := uh.repo.User.GetUsers()
 	if err != nil {
 		return err
 	}
@@ -50,7 +52,7 @@ func (uh *UserHandler) HandleGetUserByID(c *fiber.Ctx) error {
 
 	user_id, err := strconv.ParseInt(id, 10, 64)
 
-	user, err := uh.repo.GetUserById(user_id)
+	user, err := uh.repo.User.GetUserById(user_id)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return errors.New("not found")
@@ -100,7 +102,7 @@ func (uh *UserHandler) HandleCreateUser(c *fiber.Ctx) error {
 	}
 
 	// 3. convert domainEntity type into databaseDto type
-	createdUser, err := uh.repo.CreateUser(userEntity)
+	createdUser, err := uh.repo.User.CreateUser(userEntity)
 	if err != nil {
 		return err
 	}
@@ -133,7 +135,7 @@ func (uh *UserHandler) HandleDeleteUser(c *fiber.Ctx) error {
 		return errors.New("internal server error while deleting user from database")
 	}
 
-	err = uh.repo.DeleteUserById(user_id)
+	err = uh.repo.User.DeleteUserById(user_id)
 	if err != nil {
 		return errors.New("internal server error while deleting user from database")
 	}
@@ -175,7 +177,7 @@ func (uh *UserHandler) HandleUpdateUser(c *fiber.Ctx) error {
 	// 	return types.InvalidUpdateParameterErr{Msg: types.InvalidUpdateParameterMsg}
 	// }
 
-	updatedUser, err := uh.repo.UpdateUserById(user_id, updateRequestDto)
+	updatedUser, err := uh.repo.User.UpdateUserById(user_id, updateRequestDto)
 	updatedUserDto := new(types.UpdateUserResponse)
 	updatedUserDto.FirstName = updatedUser.FirstName
 	updatedUserDto.LastName = updatedUser.LastName

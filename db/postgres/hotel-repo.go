@@ -7,9 +7,13 @@ type HotelPostgresRepo struct {
 }
 
 const (
-	GetAllHotelsQuery = `SELECT * FROM hotels`
-	GetHotelByIdQuery = `SELECT * FROM hotels WHERE id = $1`
-	CreateHotelQuery  = `
+	GetAllHotelsQuery = `
+		SELECT * FROM hotels
+	`
+	GetHotelByIdQuery = `
+		SELECT * FROM hotels WHERE id = $1 
+	`
+	CreateHotelQuery = `
 		INSERT INTO hotels 
 		(hotel_name, location, stars)
 		VALUES 
@@ -59,6 +63,32 @@ func (hr *HotelPostgresRepo) GetHotels() ([]*types.Hotel, error) {
 			Stars:     dbHotel.Stars,
 		})
 	}
+	return domainEntities, nil
+}
+
+func (hr *HotelPostgresRepo) GetHotelByID(id int64) (*types.Hotel, error) {
+	ctx, cancel := CreateContext()
+	defer cancel()
+
+	row := hr.dbRepo.db.QueryRowContext(ctx, GetAllHotelsQuery)
+
+	dbEntity := new(types.PostgresHotel)
+	err := row.Scan(
+		&dbEntity.ID,
+		&dbEntity.HotelName,
+		&dbEntity.Location,
+		&dbEntity.Stars,
+		&dbEntity.CreatedAt,
+		&dbEntity.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	domainEntities := new(types.Hotel)
+	domainEntities.ID = dbEntity.ID
+	domainEntities.HotelName = dbEntity.HotelName
+	domainEntities.Location = dbEntity.Location
+	domainEntities.Stars = dbEntity.Stars
 	return domainEntities, nil
 }
 

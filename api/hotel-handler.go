@@ -6,6 +6,7 @@ import (
 	"github.com/FadyGamilM/hotelreservationapi/db"
 	"github.com/FadyGamilM/hotelreservationapi/types"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
 )
 
 type HotelHandler struct {
@@ -27,13 +28,14 @@ func NewHotelHandler(r *db.Store) *HotelHandler {
 func (h *HotelHandler) HandleGetHotels(c *fiber.Ctx) error {
 	hotels, err := h.repo.Hotel.GetHotels()
 	if err != nil {
+		log.Info(err)
 		return err
 	}
 
-	allHotelsResponse := []types.GetHotelResponse{}
+	responseDtos := []types.GetHotelResponse{}
 
 	for _, hotel := range hotels {
-		allHotelsResponse = append(allHotelsResponse, types.GetHotelResponse{
+		responseDtos = append(responseDtos, types.GetHotelResponse{
 			ID:        hotel.ID,
 			HotelName: hotel.HotelName,
 			Location:  hotel.Location,
@@ -41,20 +43,24 @@ func (h *HotelHandler) HandleGetHotels(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(allHotelsResponse)
+	return c.JSON(responseDtos)
 }
 
 func (h *HotelHandler) HandleGetHotelByID(c *fiber.Ctx) error {
 	id := c.Params("id")
 	hotelID, err := strconv.ParseInt(id, 10, 64)
+	log.Infof("hotel id : %v \n", hotelID)
+
 	if err != nil {
+		log.Info(err)
 		return err
 	}
 	hotel, err := h.repo.Hotel.GetHotelByID(hotelID)
 	if err != nil {
+		log.Info(err)
 		return err
 	}
-	hotelResponse := *&types.GetHotelResponse{
+	hotelResponse := types.GetHotelResponse{
 		ID:        hotel.ID,
 		HotelName: hotel.HotelName,
 		Location:  hotel.Location,
