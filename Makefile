@@ -16,3 +16,6 @@ test:
 
 # For test migrations 
 # docker run -i -v "H:\1- freelancing path\Courses\golang stack\projects\Hotel-Reservation-Backend\db\postgres\test_migrations:/migrations" --network host migrate/migrate -path=/migrations/ -database "postgresql://postgres:postgres@127.0.0.1:2222/testhrdb?sslmode=disable" up 1
+
+# To update a dirty schema 
+# UPDATE "public"."schema_migrations" SET "dirty" = 'false' WHERE "version" = 1;

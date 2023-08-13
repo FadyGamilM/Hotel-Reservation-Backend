@@ -7,7 +7,7 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   id BIGSERIAL PRIMARY KEY,
   first_name VARCHAR(100) NOT NULL,
   last_name VARCHAR(100) NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE users (
   updated_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 
-CREATE TABLE hotels (
+CREATE TABLE IF NOT EXISTS hotels (
   id BIGSERIAL PRIMARY KEY,
   hotel_name VARCHAR NOT NULL,
   location VARCHAR NOT NULL,
@@ -27,15 +27,15 @@ CREATE TABLE hotels (
 );
 
 
-CREATE TABLE room_types (
+CREATE TABLE IF NOT EXISTS room_types (
   id BIGSERIAL PRIMARY KEY,
   type VARCHAR NOT NULL UNIQUE,
   description VARCHAR NOT NULL,
   capacity INT NOT NULL DEFAULT(1),
-  price_per_night DECIMAL NOT NULL CHECK(price > 0.0)
+  price_per_night DECIMAL NOT NULL CHECK(price_per_night > 0.0)
 );
 
-CREATE TABLE rooms (
+CREATE TABLE IF NOT EXISTS rooms (
   id BIGSERIAL PRIMARY KEY,
   room_number VARCHAR UNIQUE NOT NULL,
   room_type_id BIGINT NOT NULL REFERENCES room_types(id),
@@ -52,5 +52,17 @@ EXECUTE PROCEDURE update_timestamp_column();
 
 CREATE TRIGGER update_timestamp_hotels
 BEFORE UPDATE ON hotels
+FOR EACH ROW
+EXECUTE PROCEDURE update_timestamp_column();
+
+
+CREATE TRIGGER update_timestamp_rooms
+BEFORE UPDATE ON rooms
+FOR EACH ROW
+EXECUTE PROCEDURE update_timestamp_column();
+
+
+CREATE TRIGGER update_timestamp_rooms_types
+BEFORE UPDATE ON room_types
 FOR EACH ROW
 EXECUTE PROCEDURE update_timestamp_column();
